@@ -1,5 +1,5 @@
--- Meowl Update: Loader -> CMD1 -> Login (con lluvia) -> Brainrot List
--- v5.6 "Crimson+Smart" (auto-rejoin en RUN PRIVATED BOT, login mejorado)
+-- Meowl Update: Loader -> CMD1 (con tu ASCII) -> Login (con lluvia) -> Brainrot List
+-- v5.7 "Crimson+Smart" (nuevo ASCII en CMD, auto-rejoin en RUN PRIVATED BOT, login mejorado)
 -- Icons: loader=107979318717959, login=104395147515167
 -- Key: 002288
 -- Get Key URL: https://zamasxmodder.github.io/Meowl-Update-Brainrot-MirandaHub/
@@ -35,7 +35,7 @@ local function getGuiParent()
 end
 
 local UI = Instance.new("ScreenGui")
-UI.Name = "MeowlSmartBoot_v56"
+UI.Name = "MeowlSmartBoot_v57"
 UI.IgnoreGuiInset = true
 UI.ZIndexBehavior = Enum.ZIndexBehavior.Global
 UI.DisplayOrder = 2000
@@ -309,7 +309,7 @@ local function showLoader(onDone)
   end)
 end
 
--- ===== CMD window (sin ASCII raro)
+-- ===== CMD window
 local function makeCMDWindow(z)
   local overlay = Instance.new("Frame")
   overlay.Size = UDim2.fromScale(1,1)
@@ -358,6 +358,7 @@ local function makeCMDWindow(z)
   return overlay, pad
 end
 
+-- ===== CMD1 (logs) – con tu ASCII sanitizado para que renderice
 local function showCMD1(onDone)
   local overlay, pad = makeCMDWindow(6)
 
@@ -386,6 +387,7 @@ local function showCMD1(onDone)
   tf.ZIndex = scroll.ZIndex + 1
   tf.Parent = scroll
 
+  -- inicio arriba y autoscroll solo si el user está abajo
   local userAtBottom, initialLock = false, true
   task.spawn(function()
     for _ = 1, 6 do scroll.CanvasPosition = Vector2.new(0, 0); task.wait(0.02) end
@@ -407,8 +409,63 @@ local function showCMD1(onDone)
     end
   end
 
+  -- Sanitizador: convierte braille / zero-width / > ASCII 126 en espacios
+  local function sanitizeAsciiStrict(str)
+      local out = table.create(#str)
+      for _, cp in utf8.codes(str) do
+          if (cp >= 0x2800 and cp <= 0x28FF) or cp == 0x200B or cp == 0x00A0 or cp > 126 then
+              out[#out+1] = " "
+          else
+              out[#out+1] = utf8.char(cp)
+          end
+      end
+      return table.concat(out)
+  end
+
+  -- === Logs intro
   push("Microsoft Windows [Version 10.0.19045.5088]")
   push("(c) Microsoft Corporation. All rights reserved.\n")
+
+  -- === Tu ASCII (sanitizado)
+  local demon2_raw = [[
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣮⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡘⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠜⠀⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣤⣴⣦⣼⣿⣿⣅⣀⣁⣀⠠⠤⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢄⣾⡆⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⣶⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣀⠑⢄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠴⢫⣾⡿⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠤⠄⠀⠀⣤⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⡈⠓⠦⡄⠀⠀⠀⠀⠀⡰⠋⣠⣿⡿⠃⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠠⣞⣵⣿⠿⣓⡦⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡈⠓⢤⡀⠀⢊⣠⣾⣿⣿⠃⠀⠀⠀
+⠀⠀⠀⠺⠤⠤⢴⣾⣿⡿⣁⠈⢉⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⣩⣶⣿⣿⣿⣿⠁⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⢀⣾⣿⣿⣥⠁⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠃⠀⠀⠈⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠟⣿⣿⣿⣿⣿⡟⣡⠊⠀⠀⠀⠀
+⠀⠀⠀⠘⢠⣿⣿⣿⡿⢿⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠋⠀⠀⢺⣿⣿⣿⢏⠞⠁⠀⠀⠀⠀⠀
+⠀⠀⠀⢠⣿⣿⣿⣿⠃⣀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠏⠀⠀⠀⣠⠞⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠀⠀⠀⠀⣠⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⣿⣿⣿⣿⣧⠠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠤⠤⠤⠒⠓⠚⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⣠⣤⣶⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢠⣿⣿⣿⣿⣿⣦⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣹⣷⣤⣴⣶⣶⣶⣤⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠧⣄⢸⣿⣿⣿⣿⣿⠀⡄⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠟⠉⠉⢀⣩⣉⡛⠿⠿⣹⣿⣿⣿⣿⣿⠿⣅⣀⠈⢹⣿⣿⣿⣿⣿⢀⡇⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⠀⠀⠀⣀⠉⣠⣬⢳⡀⢠⣿⠿⠟⣿⣿⠟⠻⠛⠻⢿⣿⣿⣿⣿⣿⣿⢸⠃⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡶⢮⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⣠⠾⢫⠅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣻⠿⢣⠀⢠⣿⣿⡿⠃⠈⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠸⣿⣿⣿⣿⣿⣏⣯⡀⢸⣆⣖⠉⠛⢿⣿⣿⣿⣿⣯⡉⣿⠡⠖⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠋⠁⠀⠐⠚⢻⣿⣿⡧⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣟⠂⢹⣿⣦⠀⠀⠸⣿⣿⡟⠛⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡆⠀⠀⠀⠀⠀⠀⠛⠙⣇⣹⣟⢹⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⠻⠷⠶⣄⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⡖⠒⣒⣒⠦⢤⡸⣷⠀⠀⠀⠀⠀⠀⠀⢠⣿⡟⢹⠈⡇⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⢠⠬⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣶⣿⣿⣿⣶⡅⠸⣗⢶⡄⠀⠀⠀⠀⣼⣿⠇⠘⡆⠁⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⣿⣿⣿⣿⣿⡙⠻⢦⠀⠀⠀⠀⠀⠀⠸⣿⠙⠿⢿⠿⣿⣿⣧⠀⠈⢧⡀⠀⠀⢀⣼⣿⣿⡄⠀⢿⢠⡀⠀⠀⠀⠀⠀⠀⠀
+⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣧⡀⠀⠀⠀⠀⠀⠀⠀⠙⠦⣀⡀⠀⢸⣿⣚⣦⠀⠀⠹⣄⣴⣿⡿⠿⠿⡇⠀⠘⣏⢣⡀⠀⠀⠀⠀⠀⠀
+⢠⡿⣹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠳⢤⡀⠀⠀⠀⠀⠀⠀⠈⠉⠑⠺⠛⠁⠈⠳⣄⢠⡎⢉⡿⠁⠀⢀⡻⣄⠀⠸⢆⠙⢦⠀⠀⠀⠀⠀
+⠘⢱⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⣄⠀⠀⠀⠀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡏⠀⡾⠀⠀⢠⡟⠀⠈⠙⠀⠈⢷⠀⠳⡄⠀⠀⠀
+⠀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⣠⣾⡟⣶⣿⣿⡓⣦⣤⣤⣤⣤⣾⣿⣿⣄⣠⠿⠤⣤⠴⢻⡟⠉⠀⠀⠀⠈⢧⠀⠹⡄⠀⠀
+⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠛⠉⠀⠀⠉⠙⣿⣿⣿⣷⣼⣏⠙⠻⢿⣿⡿⣷⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣿⡿⠁⠀⠀⣡⢴⣟⢙⣗⠶⠦⠤⠀⠀⢳⡀⢰⠀⠀
+⠀⣿⣿⣿⣿⣿⣿⣿⠟⠉⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣶⠶⠀⠩⢤⣌⡛⠿⠟⠁⠻⠟⠋⠀⠉⠻⣿⣿⡅⠀⠒⠲⡶⠋⠙⢿⡿⣇⠀⠀⠀⠀⠀⢱⡄⠁⠀
+⠀⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠛⠛⠉⣧⠀⠀⠀⠀⠀⠈⠳⣤⡀⠀⠀⠀⣀⣠⠔⠛⠛⢷⡀⠀⠞⠀⠀⠀⠀⢻⣽⡄⠀⠀⠀⠀⠀⢹⡀⠀
+⠀⠻⣿⣿⣿⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠲⠤⣝⣦⣀⠀⠀⠀⠀⠀⠁⠙⠲⠤⠀⡀⠀⠀⣷⠀
+⠈⢂⠹⣿⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣤⣀⠀⠀⠤⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠙⠒⠦⣄⡀⠀⠀⠀⢀⢀⣿⣿⣶⣿⡀
+⠀⠀⠀⠙⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠛⠛⠛⠓⠦⠀⠀⠙⠓⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⠿⠿⠺⠛⠛⠛⠛⠛⠛⠀
+⠀⠀⠀⠠⣈⠻⣄⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠤⠤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠐⠦⠉⠍⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+]]
+  push("<font color=\"#ff8ea0\">" .. sanitizeAsciiStrict(demon2_raw) .. "</font>\n")
+
+  -- Más logs
   push("C:\\Windows\\system32> echo Meowl Update bootstrap")
   push("Meowl Update bootstrap")
   push("Scanning modules: netui.dll gfxcore.pak auth.meowl")
@@ -430,11 +487,9 @@ end
 local function autoRejoin()
   local placeId = game.PlaceId
   local jobId   = game.JobId
-  -- Debounce y feedback
   if G.__MEOWL_REJOINING then return end
   G.__MEOWL_REJOINING = true
   bigToast("Rejoining...", "Returning to your current server")
-
   task.spawn(function()
     local ok, err
     if typeof(jobId) == "string" and #jobId > 0 then
@@ -560,13 +615,11 @@ local function showBrainrotList()
     end)
   end
 
-  -- Brainrots
   makeCard("Chipso And Queso",   "rbxassetid://127097195323696")
   makeCard("Extinct La Grande",  "rbxassetid://106504231225062")
   makeCard("KetupatKepat",       "rbxassetid://110731297126399")
   makeCard("Evilodon",           "rbxassetid://122929824308637")
 
-  -- Pie: "More brainrots soon..."
   local more = Instance.new("TextLabel")
   more.BackgroundTransparency = 1
   more.Font = Enum.Font.Gotham
@@ -578,7 +631,7 @@ local function showBrainrotList()
   more.Parent = list
 end
 
--- ===== LOGIN (más inteligente: ver/ocultar key + feedback inline)
+-- ===== LOGIN (inteligente: ver/ocultar key + feedback inline)
 local function showLogin()
   local rain = startCodeRain()
 
@@ -598,7 +651,6 @@ local function showLogin()
 
   -- Header
   local header = Instance.new("Frame"); header.BackgroundTransparency=1; header.Size=UDim2.new(1,0,0,80); header.Parent=root; header.ZIndex=8
-
   local appIcon = CircularIconBright("rbxassetid://104395147515167", 10)
   appIcon.Size = UDim2.fromOffset(60,60); appIcon.Position = UDim2.fromOffset(0,10); appIcon.Parent = header
   applyRainbowStroke(appIcon,1.6)
@@ -630,12 +682,10 @@ local function showLogin()
   -- Body
   local body = Instance.new("Frame"); body.BackgroundTransparency=1; body.Size=UDim2.new(1,0,1,-92); body.Position=UDim2.fromOffset(0,92); body.Parent=root; body.ZIndex=8
 
-  -- Key label
   local lbl = Instance.new("TextLabel"); lbl.BackgroundTransparency=1; lbl.Size=UDim2.new(1,0,0,26)
   lbl.Font=Enum.Font.Gotham; lbl.TextSize=18; lbl.TextXAlignment=Enum.TextXAlignment.Left
   lbl.TextColor3=THEME.text; lbl.Text="Enter key to continue:"; lbl.ZIndex=9; lbl.Parent=body
 
-  -- Input group (textbox + eye button)
   local group = Instance.new("Frame"); group.Size=UDim2.new(1,0,0,46); group.Position=UDim2.fromOffset(0,30)
   group.BackgroundColor3 = Color3.fromRGB(40,10,12); group.BorderSizePixel=0; group.ZIndex=9; group.Parent=body
   Instance.new("UICorner",group).CornerRadius = UDim.new(0,10); applyRainbowStroke(group,1.2)
@@ -651,24 +701,16 @@ local function showLogin()
   local eye = Instance.new("TextButton")
   eye.Text = "👁"; eye.Font = Enum.Font.Gotham; eye.TextSize = 18; eye.TextColor3 = THEME.text
   eye.BackgroundTransparency = 1; eye.Size = UDim2.fromOffset(40,40); eye.Position = UDim2.new(1,-44,0,3); eye.ZIndex=11; eye.Parent = group
-
   local masked = true
-  local function maskUpdate()
-    keyBox.TextTransparency = masked and 0 or 0
-    keyBox.RichText = false
-  end
   eye.MouseButton1Click:Connect(function()
     masked = not masked
     bigToast(masked and "Hidden key" or "Showing key", "")
   end)
-  maskUpdate()
 
-  -- Inline feedback
   local feedback = Instance.new("TextLabel"); feedback.BackgroundTransparency=1; feedback.Size=UDim2.new(1,0,0,20); feedback.Position=UDim2.fromOffset(0,80)
   feedback.Font=Enum.Font.Gotham; feedback.TextSize=14; feedback.TextXAlignment=Enum.TextXAlignment.Left
   feedback.TextColor3=Color3.fromRGB(255,150,150); feedback.Text=""; feedback.ZIndex=9; feedback.Parent=body
 
-  -- Buttons
   local btnRow = Instance.new("Frame"); btnRow.BackgroundTransparency=1; btnRow.Size=UDim2.new(1,0,0,46); btnRow.Position=UDim2.fromOffset(0,106); btnRow.ZIndex=9; btnRow.Parent=body
   local function mkBtn(text)
     local b = Instance.new("TextButton")

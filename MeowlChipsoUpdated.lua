@@ -727,7 +727,7 @@ local function showLogin()
   local bSub = mkBtn("Continue");  bSub.Position=UDim2.fromScale(0.5,0); bSub.Parent=btnRow
 
   bGet.MouseButton1Click:Connect(function()
-    local url = "https://zamasxmodder.github.io/Meowl-Update-Brainrot-MirandaHub/"
+    local url = "https://zamasxmodder.github.io/ChipsoAndQuesoWeb/"
     pcall(function() if setclipboard then setclipboard(url) end end)
     bigToast("Link copied!", url)
   end)

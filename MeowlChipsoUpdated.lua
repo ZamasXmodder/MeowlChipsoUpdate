@@ -1,5 +1,5 @@
--- Meowl Update: Loader -> CMD1 (con tu ASCII) -> Login (con lluvia) -> Brainrot List
--- v5.7 "Crimson+Smart" (nuevo ASCII en CMD, auto-rejoin en RUN PRIVATED BOT, login mejorado)
+-- Meowl Update: Loader -> CMD1 (ASCII user) -> Login (con lluvia) -> Brainrot List (multi-select)
+-- v6.2 "Crimson+Smart+Rainbow+Ghost" (bugfix: UDim.new; guardias pcall en transición)
 -- Icons: loader=107979318717959, login=104395147515167
 -- Key: 002288
 -- Get Key URL: https://zamasxmodder.github.io/Meowl-Update-Brainrot-MirandaHub/
@@ -11,20 +11,21 @@ G.__MEOWL_SMART_BOOT_RUNNING = true
 local Players           = game:GetService("Players")
 local TeleportService   = game:GetService("TeleportService")
 local TweenService      = game:GetService("TweenService")
-local UserInputService  = game:GetService("UserInputService")
 local LP                = Players.LocalPlayer
 
--- ===== THEME (rojos)
+-- ===== THEME (rojos + arcoíris)
 local THEME = {
   bg         = Color3.fromRGB(14,8,10),
   panel      = Color3.fromRGB(28,14,16),
   panelLite  = Color3.fromRGB(32,16,18),
   text       = Color3.fromRGB(255,232,234),
   textDim    = Color3.fromRGB(255,170,178),
-  accent     = Color3.fromRGB(255,120,140), -- rojo claro
+  accent     = Color3.fromRGB(255,120,140),
   glass_a    = 0.14,
   rainColor  = Color3.fromRGB(255,140,150),
 }
+local GET_KEY_URL = "https://zamasxmodder.github.io/Meowl-Update-Brainrot-MirandaHub/"
+local VALID_KEY   = "002288"
 
 -- ===== Safe parent
 local function getGuiParent()
@@ -35,10 +36,11 @@ local function getGuiParent()
 end
 
 local UI = Instance.new("ScreenGui")
-UI.Name = "MeowlSmartBoot_v57"
+UI.Name = "MeowlSmartBoot_v62"
 UI.IgnoreGuiInset = true
 UI.ZIndexBehavior = Enum.ZIndexBehavior.Global
 UI.DisplayOrder = 2000
+UI.ResetOnSpawn = false
 pcall(function() if syn and syn.protect_gui then syn.protect_gui(UI) end end)
 UI.Parent = getGuiParent()
 
@@ -58,32 +60,44 @@ task.defer(function()
   cam:GetPropertyChangedSignal("ViewportSize"):Connect(recomputeScale)
 end)
 
--- ===== Helpers
+-- ===== Rainbow Stroke
+local function rainbowSequence(steps)
+  steps = steps or 12
+  local ks = {}
+  for i=0,steps do
+    local t = i/steps
+    local c = Color3.fromHSV(t, 0.95, 1)
+    ks[#ks+1] = ColorSequenceKeypoint.new(t, c)
+  end
+  return ColorSequence.new(ks)
+end
+
 local function applyRainbowStroke(instance, thickness)
   local stroke = Instance.new("UIStroke")
   stroke.Thickness = thickness or 2
   stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
   stroke.Parent = instance
   local grad = Instance.new("UIGradient")
-  grad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255,120,140)),
-    ColorSequenceKeypoint.new(0.12, Color3.fromRGB(60,0,0)),
-    ColorSequenceKeypoint.new(0.25, Color3.fromRGB(255,90,110)),
-    ColorSequenceKeypoint.new(0.37, Color3.fromRGB(40,0,0)),
-    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255,150,160)),
-    ColorSequenceKeypoint.new(0.62, Color3.fromRGB(60,0,0)),
-    ColorSequenceKeypoint.new(0.75, Color3.fromRGB(255,100,130)),
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30,0,0)),
-  })
+  grad.Color = rainbowSequence(16)
+  grad.Rotation = 0
+  grad.Offset = Vector2.new(0,0)
   grad.Parent = stroke
   task.spawn(function()
-    while UI.Parent do
-      for r=0,360,4 do grad.Rotation = r; task.wait(1/60) end
+    local r, dir, off = 0, 1, 0
+    while UI.Parent and instance.Parent do
+      r = (r + 1.5) % 360
+      off = off + 0.005 * dir
+      if off >= 0.15 then dir = -1 end
+      if off <= -0.15 then dir = 1 end
+      grad.Rotation = r
+      grad.Offset = Vector2.new(off, 0)
+      task.wait(1/60)
     end
   end)
   return stroke
 end
 
+-- ===== Icono circular
 local function CircularIconBright(imageId, z)
   local holder = Instance.new("Frame")
   holder.BackgroundColor3 = Color3.fromRGB(60,20,24)
@@ -93,6 +107,7 @@ local function CircularIconBright(imageId, z)
   holder.ZIndex = z or 10
   Instance.new("UIAspectRatioConstraint", holder).AspectRatio = 1
   Instance.new("UICorner", holder).CornerRadius = UDim.new(1,0)
+  applyRainbowStroke(holder, 1.4)
 
   local halo = Instance.new("ImageLabel")
   halo.BackgroundTransparency = 1
@@ -120,6 +135,7 @@ local function CircularIconBright(imageId, z)
   return holder, img
 end
 
+-- ===== Toast
 local function bigToast(line1, line2)
   local card = Instance.new("Frame")
   card.Size = UDim2.fromScale(0.86, 0.12)
@@ -169,7 +185,7 @@ local function bigToast(line1, line2)
   end)
 end
 
--- ===== Lluvia 8-bit (tinte rojo)
+-- ===== Lluvia 8-bit
 local function startCodeRain()
   local backdrop = Instance.new("Frame")
   backdrop.Name = "CodeRain"
@@ -225,7 +241,7 @@ local function startCodeRain()
   return backdrop
 end
 
--- ===== Loader (icono nuevo rojo)
+-- ===== Loader
 local function showLoader(onDone)
   local root = Instance.new("Frame")
   root.Size = UDim2.fromScale(0.46,0.32)
@@ -244,7 +260,6 @@ local function showLoader(onDone)
   iconHolder.Position = UDim2.fromScale(0.14,0.5)
   iconHolder.AnchorPoint = Vector2.new(0.5,0.5)
   iconHolder.Parent = root
-  applyRainbowStroke(iconHolder,2)
 
   local title = Instance.new("TextLabel")
   title.BackgroundTransparency = 1
@@ -333,6 +348,7 @@ local function makeCMDWindow(z)
   titleBar.BackgroundColor3 = Color3.fromRGB(38,10,12)
   titleBar.ZIndex = win.ZIndex + 1
   titleBar.Parent = win
+  applyRainbowStroke(titleBar,1)
 
   local titleText = Instance.new("TextLabel")
   titleText.BackgroundTransparency = 1
@@ -358,7 +374,7 @@ local function makeCMDWindow(z)
   return overlay, pad
 end
 
--- ===== CMD1 (logs) – con tu ASCII sanitizado para que renderice
+-- ===== CMD1 (logs) — tu ASCII, 100% ASCII y sin RichText
 local function showCMD1(onDone)
   local overlay, pad = makeCMDWindow(6)
 
@@ -380,14 +396,13 @@ local function showCMD1(onDone)
   tf.TextColor3 = THEME.text
   tf.TextStrokeColor3 = Color3.new(0,0,0)
   tf.TextStrokeTransparency = 0.55
-  tf.RichText = true
+  tf.RichText = false
   tf.TextWrapped = false
   tf.Size = UDim2.new(1,-8,1,-8)
   tf.Position = UDim2.fromOffset(4,4)
   tf.ZIndex = scroll.ZIndex + 1
   tf.Parent = scroll
 
-  -- inicio arriba y autoscroll solo si el user está abajo
   local userAtBottom, initialLock = false, true
   task.spawn(function()
     for _ = 1, 6 do scroll.CanvasPosition = Vector2.new(0, 0); task.wait(0.02) end
@@ -409,63 +424,68 @@ local function showCMD1(onDone)
     end
   end
 
-  -- Sanitizador: convierte braille / zero-width / > ASCII 126 en espacios
   local function sanitizeAsciiStrict(str)
-      local out = table.create(#str)
-      for _, cp in utf8.codes(str) do
-          if (cp >= 0x2800 and cp <= 0x28FF) or cp == 0x200B or cp == 0x00A0 or cp > 126 then
-              out[#out+1] = " "
+      local out = {}
+      for i = 1, #str do
+          local ch = string.byte(str, i)
+          if ch and ch >= 32 and ch <= 126 then
+              out[#out+1] = string.char(ch)
           else
-              out[#out+1] = utf8.char(cp)
+              out[#out+1] = " "
           end
       end
       return table.concat(out)
   end
 
-  -- === Logs intro
   push("Microsoft Windows [Version 10.0.19045.5088]")
   push("(c) Microsoft Corporation. All rights reserved.\n")
 
-  -- === Tu ASCII (sanitizado)
-  local demon2_raw = [[
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣮⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡘⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠜⠀⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣤⣴⣦⣼⣿⣿⣅⣀⣁⣀⠠⠤⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢄⣾⡆⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⣶⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣀⠑⢄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠴⢫⣾⡿⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠤⠄⠀⠀⣤⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⡈⠓⠦⡄⠀⠀⠀⠀⠀⡰⠋⣠⣿⡿⠃⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠠⣞⣵⣿⠿⣓⡦⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡈⠓⢤⡀⠀⢊⣠⣾⣿⣿⠃⠀⠀⠀
-⠀⠀⠀⠺⠤⠤⢴⣾⣿⡿⣁⠈⢉⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⣩⣶⣿⣿⣿⣿⠁⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⢀⣾⣿⣿⣥⠁⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠃⠀⠀⠈⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠟⣿⣿⣿⣿⣿⡟⣡⠊⠀⠀⠀⠀
-⠀⠀⠀⠘⢠⣿⣿⣿⡿⢿⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠋⠀⠀⢺⣿⣿⣿⢏⠞⠁⠀⠀⠀⠀⠀
-⠀⠀⠀⢠⣿⣿⣿⣿⠃⣀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠏⠀⠀⠀⣠⠞⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠀⠀⠀⠀⣠⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⣿⣿⣿⣿⣧⠠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠤⠤⠤⠒⠓⠚⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⣠⣤⣶⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⢠⣿⣿⣿⣿⣿⣦⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣹⣷⣤⣴⣶⣶⣶⣤⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠧⣄⢸⣿⣿⣿⣿⣿⠀⡄⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠟⠉⠉⢀⣩⣉⡛⠿⠿⣹⣿⣿⣿⣿⣿⠿⣅⣀⠈⢹⣿⣿⣿⣿⣿⢀⡇⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⠀⠀⠀⣀⠉⣠⣬⢳⡀⢠⣿⠿⠟⣿⣿⠟⠻⠛⠻⢿⣿⣿⣿⣿⣿⣿⢸⠃⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡶⢮⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⣠⠾⢫⠅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣻⠿⢣⠀⢠⣿⣿⡿⠃⠈⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠸⣿⣿⣿⣿⣿⣏⣯⡀⢸⣆⣖⠉⠛⢿⣿⣿⣿⣿⣯⡉⣿⠡⠖⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠋⠁⠀⠐⠚⢻⣿⣿⡧⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣟⠂⢹⣿⣦⠀⠀⠸⣿⣿⡟⠛⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡆⠀⠀⠀⠀⠀⠀⠛⠙⣇⣹⣟⢹⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣶⣝⠻⠷⠶⣄⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⡖⠒⣒⣒⠦⢤⡸⣷⠀⠀⠀⠀⠀⠀⠀⢠⣿⡟⢹⠈⡇⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⢠⠬⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣶⣿⣿⣿⣶⡅⠸⣗⢶⡄⠀⠀⠀⠀⣼⣿⠇⠘⡆⠁⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⣿⣿⣿⣿⣿⡙⠻⢦⠀⠀⠀⠀⠀⠀⠸⣿⠙⠿⢿⠿⣿⣿⣧⠀⠈⢧⡀⠀⠀⢀⣼⣿⣿⡄⠀⢿⢠⡀⠀⠀⠀⠀⠀⠀⠀
-⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣧⡀⠀⠀⠀⠀⠀⠀⠀⠙⠦⣀⡀⠀⢸⣿⣚⣦⠀⠀⠹⣄⣴⣿⡿⠿⠿⡇⠀⠘⣏⢣⡀⠀⠀⠀⠀⠀⠀
-⢠⡿⣹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠳⢤⡀⠀⠀⠀⠀⠀⠀⠈⠉⠑⠺⠛⠁⠈⠳⣄⢠⡎⢉⡿⠁⠀⢀⡻⣄⠀⠸⢆⠙⢦⠀⠀⠀⠀⠀
-⠘⢱⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⣄⠀⠀⠀⠀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡏⠀⡾⠀⠀⢠⡟⠀⠈⠙⠀⠈⢷⠀⠳⡄⠀⠀⠀
-⠀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⣠⣾⡟⣶⣿⣿⡓⣦⣤⣤⣤⣤⣾⣿⣿⣄⣠⠿⠤⣤⠴⢻⡟⠉⠀⠀⠀⠈⢧⠀⠹⡄⠀⠀
-⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠛⠉⠀⠀⠉⠙⣿⣿⣿⣷⣼⣏⠙⠻⢿⣿⡿⣷⣿⣿⣿⣷⣿⣿⣿⣿⣿⣿⣿⣿⡿⠁⠀⠀⣡⢴⣟⢙⣗⠶⠦⠤⠀⠀⢳⡀⢰⠀⠀
-⠀⣿⣿⣿⣿⣿⣿⣿⠟⠉⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣶⠶⠀⠩⢤⣌⡛⠿⠟⠁⠻⠟⠋⠀⠉⠻⣿⣿⡅⠀⠒⠲⡶⠋⠙⢿⡿⣇⠀⠀⠀⠀⠀⢱⡄⠁⠀
-⠀⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠛⠛⠉⣧⠀⠀⠀⠀⠀⠈⠳⣤⡀⠀⠀⠀⣀⣠⠔⠛⠛⢷⡀⠀⠞⠀⠀⠀⠀⢻⣽⡄⠀⠀⠀⠀⠀⢹⡀⠀
-⠀⠻⣿⣿⣿⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠲⠤⣝⣦⣀⠀⠀⠀⠀⠀⠁⠙⠲⠤⠀⡀⠀⠀⣷⠀
-⠈⢂⠹⣿⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣤⣀⠀⠀⠤⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠙⠒⠦⣄⡀⠀⠀⠀⢀⢀⣿⣿⣶⣿⡀
-⠀⠀⠀⠙⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠛⠛⠛⠓⠦⠀⠀⠙⠓⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⠿⠿⠺⠛⠛⠛⠛⠛⠛⠀
-⠀⠀⠀⠠⣈⠻⣄⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠤⠤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠐⠦⠉⠍⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-]]
-  push("<font color=\"#ff8ea0\">" .. sanitizeAsciiStrict(demon2_raw) .. "</font>\n")
+  local ascii_safe = [[
+   .m.                                   ,_
+         ' ;M;                                ,;m `
+           ;M;.           ,      ,           ;SMM;
+          ;;Mm;         ,;  ____  ;,         ;SMM;
+         ;;;MM;        ; (.MMMMMM.) ;       ,SSMM;;
+       ,;;;mMp'        l  ';mmmm;/  j       SSSMM;;
+     .;;;;;MM;         .\,.mmSSSm,,/,      ,SSSMM;;;
+    ;;;;;;mMM;        .;MMmSSSSSSSmMm;     ;MSSMM;;;;
+   ;;;;;;mMSM;     ,_ ;MMmS;;;;;;mmmM;  -,;MMMMMMm;;;;
+  ;;;;;;;MMSMM;     \"*;M;( ( '') );m;*"/ ;MMMMMM;;;;;,
+ .;;;;;;mMMSMM;      \(@;! _     _ !;@)/ ;MMMMMMMM;;;;;,
+ ;;;;;;;MMSSSM;       ;,;.*o*> <*o*.;m; ;MMMMMMMMM;;;;;;,
+.;;;;;;;MMSSSMM;     ;Mm;           ;M;,MMMMMMMMMMm;;;;;;.
+;;;;;;;mmMSSSMMMM,   ;Mm;,   '-    ,;M;MMMMMMMSMMMMm;;;;;;;
+;;;;;;;MMMSSSMMMMMMMm;Mm;;,  ___  ,;SmM;MMMMMMSSMMMM;;;;;;;;
+;;'";;;MMMSSSSMMMMMM;MMmS;;,  "  ,;SmMM;MMMMMMSSMMMM;;;;;;;;.
+!   ;;;MMMSSSSSMMMMM;MMMmSS;;._.;;SSmMM;MMMMMMSSMMMM;;;;;;;;;
+    ;;;;*MSSSSSSMMMP;Mm*"'q;'   `;p*"*M;MMMMMSSSSMMM;;;;;;;;;
+    ';;;  ;SS*SSM*M;M;'     `-.        ;;MMMMSSSSSMM;;;;;;;;;,
+     ;;;. ;P  `q; qMM.                 ';MMMMSSSSSMp' ';;;;;;;
+     ;;;; ',    ; .mm!     \.   `.   /  ;MMM' `qSS'    ';;;;;;
+     ';;;       ' mmS';     ;     ,  `. ;'M'   `S       ';;;;;
+      `;;.        mS;;`;    ;     ;    ;M,!     '  luk   ';;;;
+       ';;       .mS;;, ;   '. o  ;   oMM;                ;;;;
+        ';;      MMmS;; `,   ;._.' -_.'MM;                 ;;;
+         `;;     MMmS;;; ;   ;      ;  MM;                 ;;;
+           `'.   'MMmS;; `;) ',    .' ,M;'                 ;;;
+              \    '' ''; ;   ;    ;  ;'                   ;;
+               ;        ; `,  ;    ;  ;                   ;;
+                        |. ;  ; (. ;  ;      _.-.         ;;
+           .-----..__  /   ;  ;   ;' ;\  _.-" .- `.      ;;
+         ;' ___      `*;   `; ';  ;  ; ;'  .-'    :      ;
+         ;     """*-.   `.  ;  ;  ;  ; ' ,'      /       |
+         ',          `-_    (.--',`--'..'      .'        ',
+           `-_          `*-._'.\\\;||\\)     ,'
+              `"*-._        "*`-ll_ll'l    ,'
+                 ,==;*-._           "-.  .'
+              _-'    "*-=`*;-._        ;'
+            ."            ;'  ;"*-.    `
+            ;   ____      ;//'     "-   `,
+            `+   .-/                 ".\\;
+              `*" /                    "'
+  ]]
+  push(sanitizeAsciiStrict(ascii_safe).."\n")
 
-  -- Más logs
   push("C:\\Windows\\system32> echo Meowl Update bootstrap")
   push("Meowl Update bootstrap")
   push("Scanning modules: netui.dll gfxcore.pak auth.meowl")
@@ -483,7 +503,7 @@ local function showCMD1(onDone)
   end)
 end
 
--- ===== ACTION: Auto-Rejoin (mismo servidor si hay JobId)
+-- ===== ACTION: Auto-Rejoin
 local function autoRejoin()
   local placeId = game.PlaceId
   local jobId   = game.JobId
@@ -509,12 +529,12 @@ local function autoRejoin()
   end)
 end
 
--- ===== Brainrot List
+-- ===== Brainrot List (multi-select + Select All + GO GHOST ALL)
 local function showBrainrotList()
   local rain = startCodeRain()
 
   local root = Instance.new("Frame")
-  root.Size = UDim2.fromScale(0.72,0.66)
+  root.Size = UDim2.fromScale(0.78,0.7)
   root.Position = UDim2.fromScale(0.5,0.52)
   root.AnchorPoint = Vector2.new(0.5,0.5)
   root.BackgroundColor3 = THEME.panelLite
@@ -527,21 +547,96 @@ local function showBrainrotList()
   local padAll = Instance.new("UIPadding", root)
   padAll.PaddingTop=UDim.new(0,12); padAll.PaddingBottom=UDim.new(0,12); padAll.PaddingLeft=UDim.new(0,12); padAll.PaddingRight=UDim.new(0,12)
 
-  local header = Instance.new("Frame"); header.BackgroundTransparency = 1; header.Size = UDim2.new(1,0,0,64); header.Parent = root; header.ZIndex=8
-  local icon = CircularIconBright("rbxassetid://104395147515167", 10); icon.Size = UDim2.fromOffset(52,52); icon.Position = UDim2.fromOffset(0,6); icon.Parent = header; applyRainbowStroke(icon,1.2)
+  local header = Instance.new("Frame")
+  header.BackgroundTransparency = 1
+  header.Size = UDim2.new(1,0,0,72)
+  header.Parent = root
+  header.ZIndex=20
 
-  local title = Instance.new("TextLabel"); title.BackgroundTransparency=1; title.Position=UDim2.fromOffset(64,6); title.Size=UDim2.new(1,-64,0,30)
-  title.Font=Enum.Font.GothamSemibold; title.TextSize=24; title.TextXAlignment=Enum.TextXAlignment.Left; title.TextColor3=THEME.text; title.Text="Auto Search Brainrot"; title.ZIndex=8; title.Parent=header
+  local icon = CircularIconBright("rbxassetid://104395147515167", 30)
+  icon.Size = UDim2.fromOffset(56,56)
+  icon.Position = UDim2.fromOffset(0,8)
+  icon.Parent = header
 
-  local subtitle = Instance.new("TextLabel"); subtitle.BackgroundTransparency=1; subtitle.Position=UDim2.fromOffset(64,34); subtitle.Size=UDim2.new(1,-64,0,24)
-  subtitle.Font=Enum.Font.Gotham; subtitle.TextSize=16; subtitle.TextXAlignment=Enum.TextXAlignment.Left; subtitle.TextColor3=THEME.textDim; subtitle.Text="Choose a brainrot to run the private bot."; subtitle.ZIndex=8; subtitle.Parent=header
+  local title = Instance.new("TextLabel")
+  title.BackgroundTransparency=1
+  title.Position=UDim2.fromOffset(66,6)
+  title.Size=UDim2.new(1,-520,0,30)
+  title.Font=Enum.Font.GothamSemibold
+  title.TextSize=24
+  title.TextXAlignment=Enum.TextXAlignment.Left
+  title.TextColor3=THEME.text
+  title.Text="Auto Search Brainrot"
+  title.ZIndex=24
+  title.Parent=header
 
-  local sep = Instance.new("Frame"); sep.Size=UDim2.new(1,0,0,1); sep.Position=UDim2.fromOffset(0,64); sep.BackgroundColor3=Color3.fromRGB(80,20,24); sep.BackgroundTransparency=0.25; sep.BorderSizePixel=0; sep.Parent=root; sep.ZIndex=8
+  local subtitle = Instance.new("TextLabel")
+  subtitle.BackgroundTransparency=1
+  subtitle.Position=UDim2.fromOffset(66,36)
+  subtitle.Size=UDim2.new(1,-520,0,26)
+  subtitle.Font=Enum.Font.Gotham
+  subtitle.TextSize=16
+  subtitle.TextXAlignment=Enum.TextXAlignment.Left
+  subtitle.TextColor3=THEME.textDim
+  subtitle.Text="Select brainrots to run the private bot."
+  subtitle.ZIndex=24
+  subtitle.Parent=header
+
+  -- ---- Controls (layout horizontal + autosize)  **BUGFIX: UDim.new**
+  local controls = Instance.new("Frame")
+  controls.BackgroundColor3=Color3.fromRGB(40,10,12)
+  controls.AutomaticSize = Enum.AutomaticSize.X
+  controls.Size=UDim2.new(0,0,0,48)
+  controls.AnchorPoint = Vector2.new(1,0)
+  controls.Position=UDim2.new(1,-12,0,12)
+  controls.BorderSizePixel=0
+  controls.ZIndex=50
+  controls.Parent=header
+  Instance.new("UICorner",controls).CornerRadius=UDim.new(0,12) -- <- FIX
+  applyRainbowStroke(controls,1.2)
+
+  local controlsPad = Instance.new("UIPadding", controls)
+  controlsPad.PaddingTop=UDim.new(0,6); controlsPad.PaddingBottom=UDim.new(0,6)
+  controlsPad.PaddingLeft=UDim.new(0,8); controlsPad.PaddingRight=UDim.new(0,8)
+
+  local row = Instance.new("UIListLayout", controls)
+  row.FillDirection = Enum.FillDirection.Horizontal
+  row.Padding = UDim.new(0,8)
+  row.VerticalAlignment = Enum.VerticalAlignment.Center
+  row.SortOrder = Enum.SortOrder.LayoutOrder
+
+  local function mkCtlBtn(txt, w)
+    local b = Instance.new("TextButton")
+    b.AutoButtonColor=false
+    b.Size=UDim2.new(0,w,1,0)
+    b.BackgroundColor3=Color3.fromRGB(42,10,12)
+    b.Text=txt
+    b.Font=Enum.Font.GothamSemibold
+    b.TextSize=16
+    b.TextColor3=THEME.text
+    b.BorderSizePixel=0
+    b.ZIndex=60
+    Instance.new("UICorner",b).CornerRadius=UDim.new(0,10)
+    applyRainbowStroke(b,1.1)
+    b.MouseEnter:Connect(function() TweenService:Create(b, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(60,16,18)}):Play() end)
+    b.MouseLeave:Connect(function() TweenService:Create(b, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(42,10,12)}):Play() end)
+    b.Parent = controls
+    return b
+  end
+
+  local btnSelectAll = mkCtlBtn("Select All", 140)
+  local btnRun       = mkCtlBtn("RUN SELECTED", 180)
+  local btnGoGhost   = mkCtlBtn("GO GHOST ALL", 160)
+  btnGoGhost.Visible = false
+
+  local sep = Instance.new("Frame"); sep.Size=UDim2.new(1,0,0,1); sep.Position=UDim2.fromOffset(0,72)
+  sep.BackgroundColor3=Color3.fromRGB(80,20,24); sep.BackgroundTransparency=0.25; sep.BorderSizePixel=0; sep.Parent=root; sep.ZIndex=10
+  applyRainbowStroke(sep,0.6)
 
   local list = Instance.new("ScrollingFrame")
   list.BackgroundTransparency = 1
-  list.Position = UDim2.fromOffset(0,68)
-  list.Size = UDim2.new(1,0,1,-92)
+  list.Position = UDim2.fromOffset(0,76)
+  list.Size = UDim2.new(1,0,1,-100)
   list.ScrollBarThickness = 6
   list.AutomaticCanvasSize = Enum.AutomaticSize.Y
   list.ZIndex = 8
@@ -552,8 +647,29 @@ local function showBrainrotList()
   layout.SortOrder = Enum.SortOrder.LayoutOrder
   layout.Padding = UDim.new(0,10)
 
+  local selected, cards = {}, {}
+
+  local function setSelected(card, val)
+    selected[card] = val and true or nil
+    if card:FindFirstChild("SelGlow") then card.SelGlow.Visible = val and true or false end
+    if card:FindFirstChild("Chk") then card.Chk.Text = val and "✓" or "" end
+  end
+
+  local function allSelected()
+    local total, ok = 0, 0
+    for _,c in ipairs(cards) do total += 1; if selected[c] then ok += 1 end end
+    return total>0 and ok==total, ok, total
+  end
+
+  local function updateTopButtons()
+    local all, cnt = allSelected()
+    btnRun.Text = "RUN SELECTED ("..cnt..")"
+    btnGoGhost.Visible = all
+  end
+
   local function makeCard(titleText, imageId)
     local card = Instance.new("Frame")
+    card.Name = "Card"
     card.BackgroundColor3 = THEME.panel
     card.BackgroundTransparency = 0.04
     card.Size = UDim2.new(1,0,0,170)
@@ -561,6 +677,7 @@ local function showBrainrotList()
     card.Parent = list
     Instance.new("UICorner", card).CornerRadius = UDim.new(0,12)
     applyRainbowStroke(card,1.2)
+    table.insert(cards, card)
 
     local pad = Instance.new("UIPadding", card)
     pad.PaddingTop=UDim.new(0,12); pad.PaddingLeft=UDim.new(0,12); pad.PaddingRight=UDim.new(0,12); pad.PaddingBottom=UDim.new(0,12)
@@ -572,7 +689,7 @@ local function showBrainrotList()
     t.TextXAlignment = Enum.TextXAlignment.Left
     t.TextColor3 = THEME.text
     t.Text = titleText
-    t.Size = UDim2.new(1, -180, 0, 26)
+    t.Size = UDim2.new(1,-180,0,26)
     t.Position = UDim2.fromOffset(0,0)
     t.ZIndex = 10
     t.Parent = card
@@ -586,6 +703,32 @@ local function showBrainrotList()
     img.ZIndex = 10
     img.Parent = card
     applyRainbowStroke(img,1)
+
+    local selGlow = Instance.new("Frame")
+    selGlow.Name = "SelGlow"
+    selGlow.BackgroundColor3 = Color3.fromRGB(60,20,24)
+    selGlow.BackgroundTransparency = 0.7
+    selGlow.BorderSizePixel = 0
+    selGlow.Visible = false
+    selGlow.ZIndex = 11
+    selGlow.Parent = card
+    selGlow.Size = UDim2.fromScale(1,1)
+    Instance.new("UICorner", selGlow).CornerRadius = UDim.new(0,12)
+    applyRainbowStroke(selGlow,2)
+
+    local chk = Instance.new("TextLabel")
+    chk.Name = "Chk"
+    chk.BackgroundColor3 = Color3.fromRGB(42,10,12)
+    chk.Text = ""
+    chk.Font = Enum.Font.GothamBold
+    chk.TextColor3 = THEME.text
+    chk.TextSize = 20
+    chk.Size = UDim2.fromOffset(34,34)
+    chk.Position = UDim2.new(1,-34,0,0)
+    chk.ZIndex = 12
+    chk.Parent = card
+    Instance.new("UICorner", chk).CornerRadius = UDim.new(1,0)
+    applyRainbowStroke(chk,1)
 
     local btn = Instance.new("TextButton")
     btn.Text = "RUN PRIVATED BOT"
@@ -608,30 +751,64 @@ local function showBrainrotList()
     btn.MouseLeave:Connect(function()
       TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(42,10,12)}):Play()
     end)
-
     btn.MouseButton1Click:Connect(function()
       bigToast("Launching "..titleText, "Rejoining current server…")
       autoRejoin()
     end)
+
+    local function toggle()
+      setSelected(card, not selected[card])
+      updateTopButtons()
+    end
+    card.InputBegan:Connect(function(i)
+      if i.UserInputType == Enum.UserInputType.MouseButton1 then toggle() end
+    end)
+    chk.InputBegan:Connect(function(i)
+      if i.UserInputType == Enum.UserInputType.MouseButton1 then toggle() end
+    end)
+
+    return card
   end
 
+  -- Cards originales + extra
   makeCard("Chipso And Queso",   "rbxassetid://127097195323696")
   makeCard("Extinct La Grande",  "rbxassetid://106504231225062")
   makeCard("KetupatKepat",       "rbxassetid://110731297126399")
   makeCard("Evilodon",           "rbxassetid://122929824308637")
+  makeCard("La Grande Combinacion",   "rbxassetid://70515189923740")
+  makeCard("La Secret Combinacion",   "rbxassetid://76434949238019")
+  makeCard("Chicleteira Bicicleteira","rbxassetid://98357270095692")
+  makeCard("Las Sis",                 "rbxassetid://103638922490554")
 
-  local more = Instance.new("TextLabel")
-  more.BackgroundTransparency = 1
-  more.Font = Enum.Font.Gotham
-  more.TextSize = 16
-  more.TextColor3 = THEME.textDim
-  more.Text = "More brainrots soon..."
-  more.Size = UDim2.new(1, 0, 0, 28)
-  more.ZIndex = 9
-  more.Parent = list
+  updateTopButtons()
+
+  -- Select All (toggle)
+  btnSelectAll.MouseButton1Click:Connect(function()
+    local all = allSelected()
+    for _,c in ipairs(cards) do setSelected(c, not all) end
+    updateTopButtons()
+    bigToast(not all and "All selected" or "Selection cleared", not all and "You can now GO GHOST ALL" or "")
+  end)
+
+  -- GO GHOST ALL
+  btnGoGhost.MouseButton1Click:Connect(function()
+    bigToast("GO GHOST ALL", "Launching all selected entries…")
+    autoRejoin()
+  end)
+
+  -- RUN SELECTED
+  btnRun.MouseButton1Click:Connect(function()
+    local _, cnt = allSelected()
+    if cnt == 0 then
+      bigToast("No selection", "Pick at least one brainrot.")
+      return
+    end
+    bigToast("Launching "..tostring(cnt).." selected", "Rejoining current server…")
+    autoRejoin()
+  end)
 end
 
--- ===== LOGIN (inteligente: ver/ocultar key + feedback inline)
+-- ===== LOGIN
 local function showLogin()
   local rain = startCodeRain()
 
@@ -649,11 +826,9 @@ local function showLogin()
   local padAll = Instance.new("UIPadding", root)
   padAll.PaddingTop=UDim.new(0,16); padAll.PaddingBottom=UDim.new(0,16); padAll.PaddingLeft=UDim.new(0,16); padAll.PaddingRight=UDim.new(0,16)
 
-  -- Header
   local header = Instance.new("Frame"); header.BackgroundTransparency=1; header.Size=UDim2.new(1,0,0,80); header.Parent=root; header.ZIndex=8
   local appIcon = CircularIconBright("rbxassetid://104395147515167", 10)
   appIcon.Size = UDim2.fromOffset(60,60); appIcon.Position = UDim2.fromOffset(0,10); appIcon.Parent = header
-  applyRainbowStroke(appIcon,1.6)
 
   local tTitle = Instance.new("TextLabel")
   tTitle.BackgroundTransparency = 1; tTitle.Position = UDim2.fromOffset(70,8)
@@ -668,7 +843,7 @@ local function showLogin()
 
   local head = CircularIconBright("rbxassetid://0", 10)
   head.Size = UDim2.fromOffset(60,60); head.Position = UDim2.new(1,-60,0,10); head.AnchorPoint=Vector2.new(1,0)
-  head.Parent=header; applyRainbowStroke(head,1.4)
+  head.Parent=header
   task.spawn(function()
     local thumb, ok = Players:GetUserThumbnailAsync(LP.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
     if ok then head:FindFirstChildOfClass("ImageLabel").Image = thumb end
@@ -678,6 +853,7 @@ local function showLogin()
 
   local sep = Instance.new("Frame"); sep.Size=UDim2.new(1,0,0,1); sep.Position=UDim2.fromOffset(0,80)
   sep.BackgroundColor3=Color3.fromRGB(90,20,26); sep.BackgroundTransparency=0.25; sep.BorderSizePixel=0; sep.Parent=root; sep.ZIndex=8
+  applyRainbowStroke(sep,0.6)
 
   -- Body
   local body = Instance.new("Frame"); body.BackgroundTransparency=1; body.Size=UDim2.new(1,0,1,-92); body.Position=UDim2.fromOffset(0,92); body.Parent=root; body.ZIndex=8
@@ -698,12 +874,33 @@ local function showLogin()
   keyBox.Font=Enum.Font.Gotham; keyBox.TextSize=18; keyBox.BorderSizePixel=0; keyBox.ZIndex=10; keyBox.Parent=group
   keyBox.ClearTextOnFocus = false
 
+  -- Máscara con bullets
+  local maskLabel = Instance.new("TextLabel")
+  maskLabel.BackgroundTransparency=1
+  maskLabel.Size=keyBox.Size
+  maskLabel.Position=keyBox.Position
+  maskLabel.Font=Enum.Font.Gotham
+  maskLabel.TextSize=18
+  maskLabel.TextColor3=THEME.text
+  maskLabel.TextXAlignment = Enum.TextXAlignment.Left
+  maskLabel.ZIndex=11
+  maskLabel.Parent=group
+  maskLabel.Text = ""
+  local masked = true
+  local function refreshMask()
+    keyBox.TextTransparency = masked and 1 or 0
+    maskLabel.Visible = masked
+    if masked then maskLabel.Text = string.rep("•", utf8.len(keyBox.Text) or #keyBox.Text) end
+  end
+  keyBox:GetPropertyChangedSignal("Text"):Connect(refreshMask)
+  refreshMask()
+
   local eye = Instance.new("TextButton")
   eye.Text = "👁"; eye.Font = Enum.Font.Gotham; eye.TextSize = 18; eye.TextColor3 = THEME.text
-  eye.BackgroundTransparency = 1; eye.Size = UDim2.fromOffset(40,40); eye.Position = UDim2.new(1,-44,0,3); eye.ZIndex=11; eye.Parent = group
-  local masked = true
+  eye.BackgroundTransparency = 1; eye.Size = UDim2.fromOffset(40,40); eye.Position = UDim2.new(1,-44,0,3); eye.ZIndex=12; eye.Parent = group
   eye.MouseButton1Click:Connect(function()
     masked = not masked
+    refreshMask()
     bigToast(masked and "Hidden key" or "Showing key", "")
   end)
 
@@ -727,7 +924,7 @@ local function showLogin()
   local bSub = mkBtn("Continue");  bSub.Position=UDim2.fromScale(0.5,0); bSub.Parent=btnRow
 
   bGet.MouseButton1Click:Connect(function()
-    local url = "https://zamasxmodder.github.io/ChipsoAndQuesoWeb/"
+    local url = GET_KEY_URL
     pcall(function() if setclipboard then setclipboard(url) end end)
     bigToast("Link copied!", url)
   end)
@@ -735,12 +932,19 @@ local function showLogin()
   local function openBrainrot()
     if rain then rain:Destroy() end
     root:Destroy()
-    showBrainrotList()
+    -- Guardar errores de UI y mostrarlos
+    local ok, err = pcall(function()
+      showBrainrotList()
+    end)
+    if not ok then
+      warn("UI error:", err)
+      bigToast("UI Error", tostring(err))
+    end
   end
 
   local function trySubmit()
     local key = keyBox.Text or ""
-    if key ~= "002288" then feedback.Text = "Invalid key. Get the latest key and try again."; return end
+    if key ~= VALID_KEY then feedback.Text = "Invalid key. Get the latest key and try again."; return end
     feedback.Text = ""
     bigToast("Key accepted", "Loading Auto Search Brainrot…")
     task.delay(0.25, openBrainrot)

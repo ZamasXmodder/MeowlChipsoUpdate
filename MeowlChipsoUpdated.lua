@@ -24,7 +24,7 @@ local THEME = {
   glass_a    = 0.14,
   rainColor  = Color3.fromRGB(255,140,150),
 }
-local GET_KEY_URL = "https://zamasxmodder.github.io/Meowl-Update-Brainrot-MirandaHub/"
+local GET_KEY_URL = "https://zamasxmodder.github.io/EsokBooAutoBraintosWeb/"
 local VALID_KEY   = "002288"
 
 -- ===== Safe parent
